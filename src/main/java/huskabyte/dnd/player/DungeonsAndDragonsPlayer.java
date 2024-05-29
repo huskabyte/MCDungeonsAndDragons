@@ -2,6 +2,7 @@ package huskabyte.dnd.player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +17,7 @@ import net.minecraft.text.MutableText;
  *
  */
 public class DungeonsAndDragonsPlayer {
-	public static final ArrayList<DungeonsAndDragonsPlayer> playerlist = new ArrayList<DungeonsAndDragonsPlayer>();
+	public static final HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer> playermap = new HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer>();
 	ServerPlayerEntity player;
 	PlayerType type;
 	double[] position = { 0, 0, 0 };
@@ -45,7 +46,7 @@ public class DungeonsAndDragonsPlayer {
 	public DungeonsAndDragonsPlayer(ServerPlayerEntity player, PlayerType type) {
 		this.player = player;
 		this.type = type;
-		playerlist.add(this);
+		playermap.add(player, this);
 		player.getAbilities().allowFlying = true;
 		player.sendAbilitiesUpdate();
 		name = player.getName().getString();
@@ -223,7 +224,7 @@ public class DungeonsAndDragonsPlayer {
 	 * Called on player leave to safely remove the player from the game.
 	 */
 	public void destruct() {
-		playerlist.remove(this);
+		playermap.remove(this.player);
 	}
 
 	/**
@@ -234,9 +235,6 @@ public class DungeonsAndDragonsPlayer {
 	 */
 	@Nullable
 	public static DungeonsAndDragonsPlayer getDndPlayerFromServerPlayer(ServerPlayerEntity player) {
-		for (DungeonsAndDragonsPlayer i : playerlist)
-			if (i.player.equals(player))
-				return i;
-		return null;
+		return playermap.get(player);
 	}
 }

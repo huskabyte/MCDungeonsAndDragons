@@ -33,7 +33,7 @@ public class ServerPlayerEntityMixin {
 		ArrayList<ServerPlayerEntity> viewers;
 		if(player.getMode() != ShowMeasure.OFF) {
 				viewers = new ArrayList<ServerPlayerEntity>();
-				for(DungeonsAndDragonsPlayer i : DungeonsAndDragonsPlayer.playerlist) {
+				for(DungeonsAndDragonsPlayer i : DungeonsAndDragonsPlayer.playermap.values()) {
 					if((i.getType() == PlayerType.GM || i.getType() == PlayerType.SPECTATOR || player.getMode() == ShowMeasure.ALL) 
 							&& player.getMode() != ShowMeasure.SELF 
 							&& !player.getEntity().equals((ServerPlayerEntity)(Object)this)) {
