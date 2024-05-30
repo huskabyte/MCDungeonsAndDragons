@@ -46,7 +46,7 @@ public class DungeonsAndDragonsPlayer {
 	public DungeonsAndDragonsPlayer(ServerPlayerEntity player, PlayerType type) {
 		this.player = player;
 		this.type = type;
-		playermap.add(player, this);
+		playermap.put(player, this);
 		player.getAbilities().allowFlying = true;
 		player.sendAbilitiesUpdate();
 		name = player.getName().getString();

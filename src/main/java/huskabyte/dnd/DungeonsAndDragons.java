@@ -4,8 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 
 import huskabyte.dnd.player.DungeonsAndDragonsPlayer;
+import huskabyte.dnd.player.ShowMeasure;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -153,6 +155,11 @@ public class DungeonsAndDragons implements ModInitializer {
 					if(green > 255) green = 255;
 					if(blue > 255) blue = 255;
 					
+					if(red < 0) red = 0;
+					if(green < 0) green = 0;
+					if(blue < 0) blue = 0;
+					
+					//L apparently Text.literal() needs final (or effectively final) args except the other ones get changed.
 					final int redd = red;
 					final int greenn = green;
 					final int bluee = blue;
@@ -161,6 +168,60 @@ public class DungeonsAndDragons implements ModInitializer {
 					context.getSource().sendFeedback(() -> Text.literal("Color set to " + redd + " " + greenn + " " + bluee + "."), true);
 					return 1;
 				}))))));
+		
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
+				.register(CommandManager.literal("mode")
+				.requires(source -> source.hasPermissionLevel(2))
+				.then(CommandManager.argument("measuremode", StringArgumentType.word())
+				.executes(context -> {
+					ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
+					String mode = StringArgumentType.getString(context, "measuremode");
+					mode = mode.toLowerCase();
+					if(mode.equals("off")) {
+						dnd.setMode(ShowMeasure.OFF);
+						context.getSource().sendFeedback(() -> Text.literal("Mode set to OFF"), true);
+						return 1;
+					}
+					if(mode.equals("self")) {
+						dnd.setMode(ShowMeasure.SELF);
+						context.getSource().sendFeedback(() -> Text.literal("Mode set to SELF"), true);
+						return 1;
+					}
+					if(mode.equals("all")) {
+						context.getSource().sendFeedback(() -> Text.literal("Mode set to ALL"), true);
+						dnd.setMode(ShowMeasure.ALL);
+						return 1;
+					}
+					context.getSource().sendFeedback(() -> Text.literal("Mode set to GM"), true);
+					dnd.setMode(ShowMeasure.GM);
+					return 1;
+				})
+				.then(CommandManager.argument("target", EntityArgumentType.player())
+				.executes(context -> {
+					ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
+					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
+					String mode = StringArgumentType.getString(context, "measuremode");
+					mode = mode.toLowerCase();
+					if(mode.equals("off")) {
+						dnd.setMode(ShowMeasure.OFF);
+						context.getSource().sendFeedback(() -> Text.literal("Mode set to OFF for " + player.getName().getString()), true);
+						return 1;
+					}
+					if(mode.equals("self")) {
+						dnd.setMode(ShowMeasure.SELF);
+						context.getSource().sendFeedback(() -> Text.literal("Mode set to SELF" + player.getName().getString()), true);
+						return 1;
+					}
+					if(mode.equals("all")) {
+						context.getSource().sendFeedback(() -> Text.literal("Mode set to ALL" + player.getName().getString()), true);
+						dnd.setMode(ShowMeasure.ALL);
+						return 1;
+					}
+					context.getSource().sendFeedback(() -> Text.literal("Mode set to GM" + player.getName().getString()), true);
+					dnd.setMode(ShowMeasure.GM);
+					return 1;
+				})))));
 	}
 		
 }
