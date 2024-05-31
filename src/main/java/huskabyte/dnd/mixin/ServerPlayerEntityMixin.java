@@ -12,6 +12,7 @@ import huskabyte.dnd.player.DungeonsAndDragonsPlayer;
 import huskabyte.dnd.player.PlayerType;
 import huskabyte.dnd.player.ShowMeasure;
 import net.minecraft.particle.DustParticleEffect;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 @Mixin(ServerPlayerEntity.class)
@@ -36,7 +37,7 @@ public class ServerPlayerEntityMixin {
 				for(DungeonsAndDragonsPlayer i : DungeonsAndDragonsPlayer.playermap.values()) {
 					if((i.getType() == PlayerType.GM || i.getType() == PlayerType.SPECTATOR || player.getMode() == ShowMeasure.ALL) 
 							&& player.getMode() != ShowMeasure.SELF 
-							&& !player.getEntity().equals((ServerPlayerEntity)(Object)this)) {
+							&& !i.getEntity().equals((ServerPlayerEntity)(Object)this)) {
 						viewers.add(i.getEntity());
 					}
 				}
@@ -63,6 +64,15 @@ public class ServerPlayerEntityMixin {
 								waypoints.get(i)[2] + (waypoints.get(i-1)[2] - waypoints.get(i)[2]) / dist * j,
 								1, 0, 0, 0, 0);
 					}
+				}
+				for(ServerPlayerEntity viewer : viewers) {
+					((ServerPlayerEntity) (Object) this).getServerWorld().spawnParticles(viewer,
+							ParticleTypes.END_ROD, 
+							true,
+							waypoints.get(i-1)[0],
+							waypoints.get(i-1)[1],
+							waypoints.get(i-1)[2],
+							3, 0, 1, 0, 0);
 				}
 			}
 		}

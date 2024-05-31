@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import org.jetbrains.annotations.Nullable;
 
+import huskabyte.dnd.initiative.InitiativeMember;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralTextContent;
 import net.minecraft.text.MutableText;
@@ -16,7 +17,7 @@ import net.minecraft.text.MutableText;
  * @author Huskabyte
  *
  */
-public class DungeonsAndDragonsPlayer {
+public class DungeonsAndDragonsPlayer implements InitiativeMember{
 	public static final HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer> playermap = new HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer>();
 	ServerPlayerEntity player;
 	PlayerType type;
@@ -81,8 +82,8 @@ public class DungeonsAndDragonsPlayer {
 		double d = 0D;
 		if (preserveMotion) {
 			d = measure();
-			waypoints.add(new double[] { 0D, 0D, 0D });
 		}
+		waypoints.add(new double[] { 0D, 0D, 0D });
 		waypoints.get(waypoints.size() - 1)[0] = this.player.getX();
 		waypoints.get(waypoints.size() - 1)[1] = this.player.getY();
 		waypoints.get(waypoints.size() - 1)[2] = this.player.getZ();
@@ -161,6 +162,7 @@ public class DungeonsAndDragonsPlayer {
 		invisible(true);
 		player.getAbilities().allowFlying = true;
 		player.sendAbilitiesUpdate();
+		setMode(ShowMeasure.SELF);
 	}
 
 	/**
@@ -189,6 +191,7 @@ public class DungeonsAndDragonsPlayer {
 		return Arrays.copyOf(position, position.length);
 	}
 	
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -236,5 +239,20 @@ public class DungeonsAndDragonsPlayer {
 	@Nullable
 	public static DungeonsAndDragonsPlayer getDndPlayerFromServerPlayer(ServerPlayerEntity player) {
 		return playermap.get(player);
+	}
+
+	@Override
+	public boolean isPlayer() {
+		return true;
+	}
+
+	@Override
+	public @Nullable DungeonsAndDragonsPlayer getController() {
+		return this;
+	}
+	
+	@Override
+	public void clean() {
+		
 	}
 }
