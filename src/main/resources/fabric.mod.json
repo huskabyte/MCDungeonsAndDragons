@@ -3,9 +3,9 @@
 	"id": "dnd",
 	"version": "${version}",
 	"name": "Dungeons and Dragons",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Adds D&D battlemap functionality to Minecraft",
 	"authors": [
-		"Me!"
+		"Huskabyte"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",

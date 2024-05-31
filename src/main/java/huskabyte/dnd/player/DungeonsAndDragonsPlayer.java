@@ -13,9 +13,6 @@ import net.minecraft.text.MutableText;
 
 /**
  * D&D Wrapper for Minecraft ServerPlayerEntity
- * 
- * @author Huskabyte
- *
  */
 public class DungeonsAndDragonsPlayer implements InitiativeMember{
 	public static final HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer> playermap = new HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer>();
