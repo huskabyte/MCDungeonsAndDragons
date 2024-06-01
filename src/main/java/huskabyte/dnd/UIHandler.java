@@ -38,7 +38,7 @@ public class UIHandler {
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			if (player.getStackInHand(hand).getItem() == Items.RAISER_ARMOR_TRIM_SMITHING_TEMPLATE) {
-				dnd.updateMeasurePoint(false);
+				dnd.setRenderMode(dnd.getRenderMode().next());
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			if (player.getStackInHand(hand).getItem() == Items.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE) {

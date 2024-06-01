@@ -25,6 +25,12 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 	String name;
 	int[] color = {255, 255, 0};
 	ShowMeasure mode;
+	
+	RenderMode drawMode;
+	/**
+	 * Radius for circle and cone drawing.
+	 */
+	double radius;
 
 	/**
 	 * Wrap a ServerPlayerEntity as a Dungeons and Dragons player
@@ -50,6 +56,8 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 		player.sendAbilitiesUpdate();
 		name = player.getName().getString();
 		mode = ShowMeasure.GM;
+		drawMode = RenderMode.MEASURE;
+		radius = 30 / DungeonsAndDragons.DISTANCE_SCALE;
 	}
 
 	/**
@@ -270,14 +278,49 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 	 * @param renderer Renderer that performs the actual draw commands.
 	 */
 	public void doRender(DungeonsAndDragonsRenderer renderer) {
-		renderer.renderWaypoint(position);
-		double[] prev_point = position;
-		for (double[] point : waypoints) {
-			renderer.renderLine(prev_point, point, color);
-			renderer.renderWaypoint(point);
-			prev_point = point;
+		double[] player_pos = new double[] {player.getX(), player.getY(), player.getZ()};
+		switch(drawMode) {
+		case MEASURE:
+			double[] prev_point = waypoints.get(0);
+			renderer.renderWaypoint(prev_point);
+			for (int i = 1; i < waypoints.size(); ++i) {
+				double[] point = waypoints.get(i);
+				renderer.renderLine(prev_point, point, color);
+				renderer.renderWaypoint(point);
+				prev_point = point;
+			}
+			renderer.renderLine(prev_point, player_pos, color);
+			break;
+		case SPHERE:
+			prev_point = waypoints.get(waypoints.size()-1);
+			renderer.renderWaypoint(prev_point);
+			renderer.renderCircle(prev_point, radius, color);
+			renderer.renderSparseSphere(prev_point, radius, color);
+			break;
+		case CONE:
+			final double CONE_HALF_ANGLE = Math.atan(1/2);
+			player.getHeadYaw();
+			break;
 		}
-		renderer.renderLine(prev_point,
-				new double[] {player.getX(), player.getY(), player.getZ()}, color);
+	}
+	
+	/**
+	 * Get the current drawing mode of the player.
+	 * The player can either be in normal draw mode (measuring paths),
+	 * sphere draw mode (sphere of determined radius from previous waypoint),
+	 * or cone draw mode (cone from the player's position).
+	 * @return
+	 */
+	public RenderMode getRenderMode() {
+		return drawMode;
+	}
+	
+	/**
+	 * Set the player's drawing mode.
+	 * @see DungeonsAndDragonsPlayer#getRenderMode()
+	 * @param mode
+	 */
+	public void setRenderMode(RenderMode mode) {
+		this.drawMode = mode;
 	}
 }
