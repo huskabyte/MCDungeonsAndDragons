@@ -11,6 +11,12 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 public class DungeonsAndDragons implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("dnd");
 
+	/**
+	 * Scale factor to convert between minecraft distance (blocks) and dnd distance (feet).
+	 * TODO: Make this configurable via a command.
+	 */
+	public static double DISTANCE_SCALE = 2.5;
+
 	@Override
 	public void onInitialize() {
 

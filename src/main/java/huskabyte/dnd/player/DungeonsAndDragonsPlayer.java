@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import org.jetbrains.annotations.Nullable;
 
+import huskabyte.dnd.DungeonsAndDragons;
 import huskabyte.dnd.initiative.InitiativeMember;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralTextContent;
@@ -14,7 +15,7 @@ import net.minecraft.text.MutableText;
 /**
  * D&D Wrapper for Minecraft ServerPlayerEntity
  */
-public class DungeonsAndDragonsPlayer implements InitiativeMember{
+public class DungeonsAndDragonsPlayer implements InitiativeMember {
 	public static final HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer> playermap = new HashMap<ServerPlayerEntity, DungeonsAndDragonsPlayer>();
 	ServerPlayerEntity player;
 	PlayerType type;
@@ -80,10 +81,7 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember{
 		if (preserveMotion) {
 			d = measure();
 		}
-		waypoints.add(new double[] { 0D, 0D, 0D });
-		waypoints.get(waypoints.size() - 1)[0] = this.player.getX();
-		waypoints.get(waypoints.size() - 1)[1] = this.player.getY();
-		waypoints.get(waypoints.size() - 1)[2] = this.player.getZ();
+		waypoints.add(new double[] { player.getX(), player.getY(), player.getZ() });
 		motionDistance = d;
 	}
 
@@ -97,7 +95,7 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember{
 		for(int i = 1; i < waypoints.size(); i++) {
 			motionDistance+=(Math.sqrt(Math.pow((waypoints.get(i)[0] - waypoints.get(i-1)[0]), 2)
 					+ Math.pow((waypoints.get(i)[1] - waypoints.get(i-1)[1]), 2)
-					+ Math.pow((waypoints.get(i)[2] - waypoints.get(i-1)[2]), 2))) * 2.5;
+					+ Math.pow((waypoints.get(i)[2] - waypoints.get(i-1)[2]), 2)));
 		}
 	}
 
@@ -108,6 +106,16 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember{
 		motionDistance = 0;
 		waypoints.clear();
 		waypoints.add(getPosition());
+	}
+	
+	/**
+	 * Convenience function for getting distance to the last waypoint.
+	 * @return Distance between player current position and the last waypoint in the array.
+	 */
+	public double distanceToLastWaypoint() {
+		return Math.sqrt(Math.pow((waypoints.get(waypoints.size() - 1)[0] - player.getX()), 2)
+				+ Math.pow((waypoints.get(waypoints.size() - 1)[1] - player.getY()), 2)
+				+ Math.pow((waypoints.get(waypoints.size() - 1)[2] - player.getZ()), 2));
 	}
 
 	/**
@@ -121,15 +129,18 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember{
 		}
 		return motionDistance + (Math.sqrt(Math.pow((waypoints.get(waypoints.size() - 1)[0] - player.getX()), 2)
 				+ Math.pow((waypoints.get(waypoints.size() - 1)[1] - player.getY()), 2)
-				+ Math.pow((waypoints.get(waypoints.size() - 1)[2] - player.getZ()), 2))) * 2.5;
+				+ Math.pow((waypoints.get(waypoints.size() - 1)[2] - player.getZ()), 2)));
 	}
 
 	/**
 	 * TODO test Update player action bar with distance
 	 */
 	public void updateActionBar() {
-		this.player.sendMessage(MutableText.of(new LiteralTextContent("Movement: " + Math.round(measure()) + " ft.")),
-				true);
+		String messageFormat = "Movement: %.1f ft (%.1f to previous waypoint)";
+		double totalDistance = measure() * DungeonsAndDragons.DISTANCE_SCALE;
+		double singleDistance = distanceToLastWaypoint() * DungeonsAndDragons.DISTANCE_SCALE;
+		String message = String.format(messageFormat, totalDistance, singleDistance);
+		this.player.sendMessage(MutableText.of(new LiteralTextContent(message)), true);
 	}
 
 	/**
@@ -251,5 +262,22 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember{
 	@Override
 	public void clean() {
 		
+	}
+	
+	/**
+	 * Perform rendering for this dnd player.
+	 * Draws its lines/waypoints/whatever we want to onto the world.
+	 * @param renderer Renderer that performs the actual draw commands.
+	 */
+	public void doRender(DungeonsAndDragonsRenderer renderer) {
+		renderer.renderWaypoint(position);
+		double[] prev_point = position;
+		for (double[] point : waypoints) {
+			renderer.renderLine(prev_point, point, color);
+			renderer.renderWaypoint(point);
+			prev_point = point;
+		}
+		renderer.renderLine(prev_point,
+				new double[] {player.getX(), player.getY(), player.getZ()}, color);
 	}
 }
