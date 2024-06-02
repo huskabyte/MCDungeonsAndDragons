@@ -13,8 +13,8 @@ public class InitiativeTracker {
 	private static final HashMap<InitiativeMember, int[]> TEMP_PROPERTIES = new HashMap<InitiativeMember, int[]>();
 	private static int turn = 0;
 	
-	private static final int INIT = 0;
-	private static final int DEX = 1;
+	public static final int INIT = 0;
+	public static final int DEX = 1;
 	
 	/**
 	 * Get whether initiative is active
@@ -22,6 +22,14 @@ public class InitiativeTracker {
 	 */
 	public static boolean getActive() {
 		return ACTIVE;
+	}
+	
+	/**
+	 * Get zero indexed position number
+	 * @return turn number
+	 */
+	public static int turn() {
+		return turn;
 	}
 	
 	/**
@@ -38,12 +46,20 @@ public class InitiativeTracker {
 	 * Get a deep copy of the initiative order
 	 * @return deepcopy of private order list
 	 */
-	public ArrayList<InitiativeMember> getOrder(){
+	public static ArrayList<InitiativeMember> getOrder(){
 		return new ArrayList<InitiativeMember>(ORDER);
 	}
 	
 	/**
-	 * Add a new member and set the turn counter to 0
+	 * Get a deep copy of initiative properties
+	 * @return deep copy of private member mappings
+	 */
+	public static HashMap<InitiativeMember, int[]> getProperties(){
+		return new HashMap<InitiativeMember, int[]>(TEMP_PROPERTIES);
+	}
+	
+	/**
+	 * Add a new member and set turn counter to 0
 	 * 
 	 * @param member InitiativeMember to add
 	 * @param init Initiative count
@@ -67,15 +83,31 @@ public class InitiativeTracker {
 		for(int i = 0; i < ORDER.size(); i++) {
 			if(init > TEMP_PROPERTIES.get(ORDER.get(i))[INIT]) {
 				ORDER.add(i, member);
+				if(i <= InitiativeTracker.turn) {
+					updateLineVisibility(ORDER.get(InitiativeTracker.turn));
+					updateLineVisibility(ORDER.get(InitiativeTracker.turn+1));
+				}
 				break;
 			}
 			if(init == TEMP_PROPERTIES.get(ORDER.get(i))[INIT]) {
 				if( dex > TEMP_PROPERTIES.get(ORDER.get(i))[DEX]) {
 					ORDER.add(i, member);
+					if(i <= InitiativeTracker.turn) {
+						updateLineVisibility(ORDER.get(InitiativeTracker.turn));
+						updateLineVisibility(ORDER.get(InitiativeTracker.turn+1));
+					}
 					break;
 				}
 				if(i == ORDER.size() - 1 || TEMP_PROPERTIES.get(ORDER.get(i+1))[INIT] > init) {
 					ORDER.add(i+1, member);
+					if(i == ORDER.size() - 1) {
+						updateLineVisibility(ORDER.get(InitiativeTracker.turn));
+						break;
+					}
+					if(i <= InitiativeTracker.turn) {
+						updateLineVisibility(ORDER.get(InitiativeTracker.turn));
+						updateLineVisibility(ORDER.get(InitiativeTracker.turn+1));
+					}
 					break;
 				}
 			}
@@ -94,10 +126,25 @@ public class InitiativeTracker {
 			if(index < turn) {
 				setTurn(turn - 1);
 			}else {
-				InitiativeTracker.updateLineVisibility(ORDER.get(turn));
+				updateLineVisibility(ORDER.get(turn));
 			}
 		}
 		TEMP_PROPERTIES.remove(member);
+	}
+	
+	/**
+	 * Safely remove initiative member at index
+	 * 
+	 * @param index Index to remove at
+	 */
+	public static void remove(int index) {
+		if(index < 0 || index >= ORDER.size())return;
+		ORDER.remove(index);
+		if(index < turn) {
+			setTurn(turn - 1);
+		}else {
+			updateLineVisibility(ORDER.get(turn));
+		}
 	}
 	
 	/**
@@ -135,7 +182,7 @@ public class InitiativeTracker {
 	/**
 	 * Deactivate Initiative
 	 */
-	public void end() {
+	public static void end() {
 		clear();
 		toggleActive(false);
 	}
@@ -145,6 +192,7 @@ public class InitiativeTracker {
 	 */
 	public static void toggleActive() {
 		toggleActive(!ACTIVE);
+		updateLineVisibility(ORDER.get(turn));
 	}
 	
 	/**
@@ -153,10 +201,27 @@ public class InitiativeTracker {
 	 * @param turn turn counter to move to
 	 */
 	public static void setTurn(int turn) {
+		int oldturn = InitiativeTracker.turn;
 		InitiativeTracker.turn = turn;
-		for(InitiativeMember i : ORDER) {
-			InitiativeTracker.updateLineVisibility(i);
-		}
+		if(InitiativeTracker.turn >= ORDER.size()) InitiativeTracker.turn = InitiativeTracker.turn % ORDER.size();
+		if(InitiativeTracker.turn < 0) InitiativeTracker.turn = 0;
+		updateLineVisibility(ORDER.get(oldturn));
+		updateLineVisibility(ORDER.get(InitiativeTracker.turn));
+	}
+	
+	/**
+	 * Go to the next turn in the order
+	 */
+	public static void next() {
+		next(1);
+	}
+	
+	/**
+	 * Add to turn counter and wrap around if needed
+	 * @param turns How many turns to go forward
+	 */
+	public static void next(int turns) {
+		setTurn(turn + turns);
 	}
 	
 	/**
@@ -176,16 +241,14 @@ public class InitiativeTracker {
 	private static void toggleActive(boolean active) {
 		ACTIVE = active;
 		if(active) {
-			for(InitiativeMember i : ORDER) {
-				InitiativeTracker.updateLineVisibility(i);
-			}
+			updateAll();
 		}
 	}
 	
 	/**
 	 * Update line visibility for an InitiativeMember
 	 * 
-	 * @param member
+	 * @param member Member to update for
 	 */
 	private static void updateLineVisibility(InitiativeMember member) {
 		if(!ACTIVE || member.getController() == null || member.getController().getType() != PlayerType.PLAYER) return;
@@ -196,10 +259,19 @@ public class InitiativeTracker {
 			dnd.setMode(ShowMeasure.SELF);
 			return;
 		}
-		if(InitiativeTracker.getActive() && InitiativeTracker.turn(dnd) && dnd.getType() == PlayerType.PLAYER) {
+		if(getActive() && turn(dnd) && dnd.getType() == PlayerType.PLAYER) {
 			dnd.setMode(ShowMeasure.ALL);
 			return;
 		}
 		dnd.setMode(ShowMeasure.GM);
+	}
+	
+	/**
+	 * Update everyone's line visibility (for edge cases)
+	 */
+	public static void updateAll() {
+		for(InitiativeMember i : ORDER) {
+			updateLineVisibility(i);
+		}
 	}
 }

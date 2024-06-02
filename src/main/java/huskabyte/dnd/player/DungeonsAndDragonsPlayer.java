@@ -168,6 +168,8 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 		invisible(false);
 		player.getAbilities().allowFlying = true;
 		player.sendAbilitiesUpdate();
+		if(this.getMode() == ShowMeasure.OFF)return;
+		this.setMode(ShowMeasure.GM);
 	}
 
 	/**
@@ -179,6 +181,8 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 		player.getAbilities().allowFlying = true;
 		player.sendAbilitiesUpdate();
 		setMode(ShowMeasure.SELF);
+		if(this.getMode() == ShowMeasure.OFF)return;
+		this.setMode(ShowMeasure.SELF);
 	}
 
 	/**
@@ -189,6 +193,8 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 		invisible(false);
 		player.getAbilities().allowFlying = true;
 		player.sendAbilitiesUpdate();
+		if(this.getMode() == ShowMeasure.OFF)return;
+		this.setMode(ShowMeasure.GM);
 	}
 	
 	/**

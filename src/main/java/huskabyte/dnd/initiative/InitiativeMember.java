@@ -21,15 +21,25 @@ public interface InitiativeMember {
 	@Nullable
 	public DungeonsAndDragonsPlayer getController();
 	
+	/**
+	 * Get name to display in initiative order
+	 * @return Initiative name
+	 */
 	public String getName();
 	
 	default void add(int init, int dex) {
 		InitiativeTracker.add(this, init, dex);
 	}
 	
+	/**
+	 * Remove self from initiative tracker
+	 */
 	default void remove() {
 		InitiativeTracker.remove(this);
 	}
 	
+	/**
+	 * Destruct self
+	 */
 	public void clean();
 }
