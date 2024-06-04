@@ -87,7 +87,8 @@ public class InitiativeTracker {
 					updateLineVisibility(ORDER.get(InitiativeTracker.turn));
 					updateLineVisibility(ORDER.get(InitiativeTracker.turn+1));
 				}
-				break;
+				setTurn(turn);
+				return;
 			}
 			if(init == TEMP_PROPERTIES.get(ORDER.get(i))[INIT]) {
 				if( dex > TEMP_PROPERTIES.get(ORDER.get(i))[DEX]) {
@@ -96,22 +97,25 @@ public class InitiativeTracker {
 						updateLineVisibility(ORDER.get(InitiativeTracker.turn));
 						updateLineVisibility(ORDER.get(InitiativeTracker.turn+1));
 					}
-					break;
+					setTurn(turn);
+					return;
 				}
 				if(i == ORDER.size() - 1 || TEMP_PROPERTIES.get(ORDER.get(i+1))[INIT] > init) {
 					ORDER.add(i+1, member);
 					if(i == ORDER.size() - 1) {
 						updateLineVisibility(ORDER.get(InitiativeTracker.turn));
-						break;
+						return;
 					}
 					if(i <= InitiativeTracker.turn) {
 						updateLineVisibility(ORDER.get(InitiativeTracker.turn));
 						updateLineVisibility(ORDER.get(InitiativeTracker.turn+1));
 					}
-					break;
+					setTurn(turn);
+					return;
 				}
 			}
 		}
+		ORDER.add(member);
 		setTurn(turn);
 	}
 	
@@ -176,6 +180,7 @@ public class InitiativeTracker {
 	 */
 	public static void start() {
 		clear();
+		add(new InitiativeMonster("Top of round"), 100, 100);
 		toggleActive(true);
 	}
 	
@@ -203,7 +208,7 @@ public class InitiativeTracker {
 	public static void setTurn(int turn) {
 		int oldturn = InitiativeTracker.turn;
 		InitiativeTracker.turn = turn;
-		if(InitiativeTracker.turn >= ORDER.size()) InitiativeTracker.turn = InitiativeTracker.turn % ORDER.size();
+		if(turn > 0 && InitiativeTracker.turn >= ORDER.size()) InitiativeTracker.turn = InitiativeTracker.turn % ORDER.size();
 		if(InitiativeTracker.turn < 0) InitiativeTracker.turn = 0;
 		updateLineVisibility(ORDER.get(oldturn));
 		updateLineVisibility(ORDER.get(InitiativeTracker.turn));
@@ -230,7 +235,7 @@ public class InitiativeTracker {
 	public static void clear() {
 		ORDER.clear();
 		TEMP_PROPERTIES.clear();
-		setTurn(0);
+		InitiativeTracker.turn = 0;
 	}
 	
 	/**

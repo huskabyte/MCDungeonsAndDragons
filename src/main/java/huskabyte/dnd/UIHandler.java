@@ -1,8 +1,13 @@
 package huskabyte.dnd;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
+import huskabyte.dnd.initiative.InitiativeMember;
+import huskabyte.dnd.initiative.InitiativeMonster;
 import huskabyte.dnd.initiative.InitiativeTracker;
 import huskabyte.dnd.player.DungeonsAndDragonsPlayer;
 import huskabyte.dnd.player.PlayerType;
@@ -174,7 +179,7 @@ public class UIHandler {
 		 * ALL = everyone
 		 * GM = you and all GMs and Spectators
 		 * 
-		 * TODO mix into tab completion event to send options
+		 * TODO turn them into subcommands
 		 */
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
 				.register(CommandManager.literal("mode")
@@ -230,7 +235,7 @@ public class UIHandler {
 					return 1;
 				})))));
 		
-		/**
+		/*
 		 * Initiative-smart on/off toggle for line visibility without op
 		 */
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
@@ -280,5 +285,149 @@ public class UIHandler {
 					Text.literal("Mode set to GM for " + dnd.getName());
 					return 1;
 				}))));
+		
+		/*
+		 * Initiative Tracker Commands (init)
+		 * 
+		 * ADMIN
+		 * start = clean and start initiative
+		 * end = end and clean initiative
+		 * toggle = activate/deactivate initiative
+		 * clear = clear initiative
+		 * 
+		 * ORDER
+		 * join <init> <dex> [target] = join initiative with init roll and dex mod; OPT target D&D player to add
+		 * madd <name> <init> <dex> = join initiative as a monster with name
+		 * remove <name> = remove first target with name
+		 * removeat <turn> = remove target at index
+		 * 
+		 * TRACKING
+		 * next = go next in initiative order
+		 * list = list all items in initiative order, with turn indication and init count
+		 */
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
+				.register(CommandManager.literal("init")
+				.then(CommandManager.literal("start")
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> {
+							InitiativeTracker.start();
+							context.getSource().sendFeedback(() -> Text.literal("Started new initiative."), true);
+							return 1;
+						}
+						))
+				.then(CommandManager.literal("end")
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> {
+							InitiativeTracker.end();
+							context.getSource().sendFeedback(() -> Text.literal("Initiative cleared and ended."), true);
+							return 1;
+						}
+						))
+				.then(CommandManager.literal("toggle")
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> {
+							InitiativeTracker.toggleActive();
+							context.getSource().sendFeedback(() -> Text.literal("Initiative state toggled."), true);
+							return 1;
+						}
+						))
+				.then(CommandManager.literal("clear")
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> {
+							InitiativeTracker.clear();
+							context.getSource().sendFeedback(() -> Text.literal("Cleared Initiative"), true);
+							return 1;
+						}
+						))
+				//TODO join function - last 3 lines can be abstracted
+				.then(CommandManager.literal("join")
+						.then(CommandManager.argument("init", IntegerArgumentType.integer())
+						.then(CommandManager.argument("dex", IntegerArgumentType.integer())
+						.executes(context -> {
+							ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+							DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
+							InitiativeTracker.add(dnd, IntegerArgumentType.getInteger(context, "init"), IntegerArgumentType.getInteger(context, "dex"));
+							context.getSource().sendFeedback(() -> Text.literal("Added " + dnd.getName() + " at Initiative " + IntegerArgumentType.getInteger(context, "init")), true);
+							return 1;
+						}
+						)
+						.then(CommandManager.argument("target", EntityArgumentType.player())
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> {
+							ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
+							DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
+							InitiativeTracker.add(dnd, IntegerArgumentType.getInteger(context, "init"), IntegerArgumentType.getInteger(context, "dex"));
+							context.getSource().sendFeedback(() -> Text.literal("Added " + dnd.getName() + " at Initiative " + IntegerArgumentType.getInteger(context, "init")), true);
+							return 1;
+						})
+						))))
+				.then(CommandManager.literal("madd")
+						.then(CommandManager.argument("name", StringArgumentType.string())
+						.then(CommandManager.argument("init", IntegerArgumentType.integer())
+						.then(CommandManager.argument("dex", IntegerArgumentType.integer())
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> {
+							InitiativeTracker.add(new InitiativeMonster(StringArgumentType.getString(context, "name")), IntegerArgumentType.getInteger(context, "init"), IntegerArgumentType.getInteger(context, "dex"));
+							context.getSource().sendFeedback(() -> Text.literal("Added " + StringArgumentType.getString(context, "name") + " at Initiative " + IntegerArgumentType.getInteger(context, "init")), true);
+							return 1;
+						}
+						)))))
+				.then(CommandManager.literal("remove")
+						.requires(source -> source.hasPermissionLevel(2))
+						.then(CommandManager.argument("name", StringArgumentType.string())
+						.executes(context -> {
+							ArrayList<InitiativeMember> order = InitiativeTracker.getOrder();
+							String name = StringArgumentType.getString(context, "name");
+							for(int i = 0; i < order.size(); i++) {
+								if(order.get(i).getName().equals(name)) {
+									InitiativeTracker.remove(i);
+									context.getSource().sendFeedback(() -> Text.literal("Removed " + name + " from initiative order."), true);
+									break;
+								}	
+							}
+							return 1;
+						}
+						)))
+				.then(CommandManager.literal("removeat")
+						.requires(source -> source.hasPermissionLevel(2))
+						.then(CommandManager.argument("zeroindexedposition", IntegerArgumentType.integer(0, InitiativeTracker.getOrder().size()-1))
+						.executes(context -> {
+							InitiativeTracker.remove(IntegerArgumentType.getInteger(context, "zeroindexedposition"));
+							context.getSource().sendFeedback(() -> Text.literal("Removed position " + IntegerArgumentType.getInteger(context, "zeroindexedposition") + " from initiative order."), true);
+							return 1;
+						}
+						)))
+				.then(CommandManager.literal("next")
+						.requires(source -> source.hasPermissionLevel(2))
+						.executes(context -> {
+							InitiativeTracker.next();
+							context.getSource().sendFeedback(() -> Text.literal("Moved combat up by 1 turn. " + InitiativeTracker.getOrder().get(InitiativeTracker.turn()).getName() + "'s turn is up."), true);
+							return 1;
+						}
+						)
+						.then(CommandManager.argument("turns", IntegerArgumentType.integer())
+						.executes(context -> {
+							InitiativeTracker.next(IntegerArgumentType.getInteger(context, "turns"));
+							context.getSource().sendFeedback(() -> Text.literal("Moved combat up by " + IntegerArgumentType.getInteger(context, "turns") + " turns. " + InitiativeTracker.getOrder().get(InitiativeTracker.turn()).getName() + "'s turn is up."), true);
+							return 1;
+						})))
+				.then(CommandManager.literal("list")
+						.executes(context -> {
+							ArrayList<InitiativeMember> order = InitiativeTracker.getOrder();
+							HashMap<InitiativeMember, int[]> props = InitiativeTracker.getProperties();
+							int turn = InitiativeTracker.turn();
+							String s = "\n";
+							for(int i = 0; i < order.size(); i++) {
+								if(i == turn) {
+									s+="-->";
+								}
+								s+=(props.get(order.get(i))[InitiativeTracker.INIT] + " " + order.get(i).getName()+"\n");
+							}
+							final String out = s;
+							context.getSource().sendFeedback(() -> Text.literal(out), false);
+							return 1;
+						}
+						))
+				));
 	}
 }
