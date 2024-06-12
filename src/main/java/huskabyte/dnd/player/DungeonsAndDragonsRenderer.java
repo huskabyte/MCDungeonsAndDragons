@@ -106,9 +106,9 @@ public class DungeonsAndDragonsRenderer {
 			for(ServerPlayerEntity viewer : viewers) {
 				world.spawnParticles(viewer,
 						particle, true,
-						center[0] + radius * Math.cos(angle),
+						center[0] - radius * Math.sin(angle),
 						center[1],
-						center[2] + radius * Math.sin(angle),
+						center[2] + radius * Math.cos(angle),
 						1, 0, 0, 0, 0);
 			}
 		}
