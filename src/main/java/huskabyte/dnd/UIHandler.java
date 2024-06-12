@@ -11,6 +11,7 @@ import huskabyte.dnd.initiative.InitiativeMember;
 import huskabyte.dnd.initiative.InitiativeMonster;
 import huskabyte.dnd.initiative.InitiativeTracker;
 import huskabyte.dnd.player.DungeonsAndDragonsPlayer;
+import huskabyte.dnd.player.DungeonsAndDragonsRenderer;
 import huskabyte.dnd.player.PlayerType;
 import huskabyte.dnd.player.ShowMeasure;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -189,22 +190,19 @@ public class UIHandler {
 		 */
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
 				.register(CommandManager.literal("particles")
-				.then(CommandManager.argument("linear", DoubleArgumentType.doubleArg(0.01, 0.9))
+				.then(CommandManager.argument("linear", DoubleArgumentType.doubleArg(0.01, 10))
 				.executes(context -> {
-					ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
 					double linearDensity = DoubleArgumentType.getDouble(context, "linear");
 					
-					// TODO implement
+					DungeonsAndDragonsRenderer.LINE_SPACING = linearDensity;
 					context.getSource().sendFeedback(() -> Text.literal("Linear particle density set to " + linearDensity + "."), true);
 					return 1;
 				})
-				.then(CommandManager.argument("sphere", DoubleArgumentType.doubleArg(0.0001, 0.1))
+				.then(CommandManager.argument("sphere", DoubleArgumentType.doubleArg(0.001, 0.1))
 				.executes(context -> {
-					ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
-					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
 					double sphereDensity = DoubleArgumentType.getDouble(context, "sphere");
-										// TODO implement
+
+					DungeonsAndDragonsRenderer.SPHERE_DENSITY = sphereDensity;
 					context.getSource().sendFeedback(() -> Text.literal("Sphere particle density set to " + sphereDensity + "."), true);
 					return 1;
 				})))));
