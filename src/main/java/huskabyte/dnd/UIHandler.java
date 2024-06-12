@@ -3,6 +3,7 @@ package huskabyte.dnd;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 
@@ -144,33 +145,69 @@ public class UIHandler {
 		 */
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
 				.register(CommandManager.literal("color")
-				.then(CommandManager.argument("red", IntegerArgumentType.integer())
-				.then(CommandManager.argument("green", IntegerArgumentType.integer())
-				.then(CommandManager.argument("blue", IntegerArgumentType.integer())
+				.then(CommandManager.argument("red", IntegerArgumentType.integer(0, 255))
+				.then(CommandManager.argument("green", IntegerArgumentType.integer(0, 255))
+				.then(CommandManager.argument("blue", IntegerArgumentType.integer(0, 255))
 				.executes(context -> {
 					ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
 					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
-					int red = IntegerArgumentType.getInteger(context, "red");
-					int green = IntegerArgumentType.getInteger(context, "green");
-					int blue = IntegerArgumentType.getInteger(context, "blue");
-					
-					if(red > 255) red = 255;
-					if(green > 255) green = 255;
-					if(blue > 255) blue = 255;
-					
-					if(red < 0) red = 0;
-					if(green < 0) green = 0;
-					if(blue < 0) blue = 0;
-					
-					//L apparently Text.literal() needs final (or effectively final) args except the other ones get changed.
-					final int redd = red;
-					final int greenn = green;
-					final int bluee = blue;
+					final int red = IntegerArgumentType.getInteger(context, "red");
+					final int green = IntegerArgumentType.getInteger(context, "green");
+					final int blue = IntegerArgumentType.getInteger(context, "blue");
 					
 					dnd.setColor(new int[] {red, green, blue});
-					context.getSource().sendFeedback(() -> Text.literal("Color set to " + redd + " " + greenn + " " + bluee + "."), true);
+					context.getSource().sendFeedback(() -> Text.literal("Color set to " + red + " " + green + " " + blue + "."), true);
 					return 1;
 				}))))));
+
+		/*
+		 * Command to set radius of circles and cone hitboxes
+		 * radius = radius in feet.
+		 * 
+		 * Circle hitboxes are anchored to the last waypoint.
+		 * Cones always follow the player, including orientation.
+		 */
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
+				.register(CommandManager.literal("radius")
+				.then(CommandManager.argument("r", DoubleArgumentType.doubleArg(0))
+				.executes(context -> {
+					ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
+					double radius = DoubleArgumentType.getDouble(context, "r");
+					
+					dnd.setRadius(radius / DungeonsAndDragons.DISTANCE_SCALE);
+					context.getSource().sendFeedback(() -> Text.literal("Radius set to " + radius + " feet."), true);
+					return 1;
+				}))));
+
+		/*
+		 * Command to set particle density
+		 * radius = radius in feet.
+		 * 
+		 * Circle hitboxes are anchored to the last waypoint.
+		 * Cones always follow the player, including orientation.
+		 */
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> dispatcher
+				.register(CommandManager.literal("particles")
+				.then(CommandManager.argument("linear", DoubleArgumentType.doubleArg(0.01, 0.9))
+				.executes(context -> {
+					ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
+					double linearDensity = DoubleArgumentType.getDouble(context, "linear");
+					
+					// TODO implement
+					context.getSource().sendFeedback(() -> Text.literal("Linear particle density set to " + linearDensity + "."), true);
+					return 1;
+				})
+				.then(CommandManager.argument("sphere", DoubleArgumentType.doubleArg(0.0001, 0.1))
+				.executes(context -> {
+					ServerPlayerEntity player = context.getSource().getPlayerOrThrow();
+					DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer.getDndPlayerFromServerPlayer(player);
+					double sphereDensity = DoubleArgumentType.getDouble(context, "sphere");
+										// TODO implement
+					context.getSource().sendFeedback(() -> Text.literal("Sphere particle density set to " + sphereDensity + "."), true);
+					return 1;
+				})))));
 		
 		/*
 		 * Swap between line broadcast modes

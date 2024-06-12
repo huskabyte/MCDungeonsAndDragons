@@ -28,7 +28,7 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 	
 	RenderMode drawMode;
 	/**
-	 * Radius for circle and cone drawing.
+	 * Radius for circle and cone drawing. Measured in blocks.
 	 */
 	double radius;
 
@@ -229,9 +229,18 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 	public ShowMeasure getMode() {
 		return mode;
 	}
-	
+
 	public void setColor(int[] color) {
 		this.color = color;
+	}
+	
+	/**
+	 * Set the active radius of this player, for drawing sphere and cone hitboxes.
+	 * NOTE: radius should be given in meters!
+	 * @param radius Radius to set
+	 */
+	public void setRadius(double radius) {
+		this.radius = radius;
 	}
 	
 	public void setMode(ShowMeasure mode) {
@@ -284,28 +293,39 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 	 * @param renderer Renderer that performs the actual draw commands.
 	 */
 	public void doRender(DungeonsAndDragonsRenderer renderer) {
-		double[] player_pos = new double[] {player.getX(), player.getY(), player.getZ()};
+		double[] playerPos = new double[] {player.getX(), player.getY(), player.getZ()};
 		switch(drawMode) {
 		case MEASURE:
-			double[] prev_point = waypoints.get(0);
-			renderer.renderWaypoint(prev_point);
+			double[] prevPoint = waypoints.get(0);
+			renderer.renderWaypoint(prevPoint);
 			for (int i = 1; i < waypoints.size(); ++i) {
 				double[] point = waypoints.get(i);
-				renderer.renderLine(prev_point, point, color);
+				renderer.renderLine(prevPoint, point, color);
 				renderer.renderWaypoint(point);
-				prev_point = point;
+				prevPoint = point;
 			}
-			renderer.renderLine(prev_point, player_pos, color);
+			renderer.renderLine(prevPoint, playerPos, color);
 			break;
 		case SPHERE:
-			prev_point = waypoints.get(waypoints.size()-1);
-			renderer.renderWaypoint(prev_point);
-			renderer.renderCircle(prev_point, radius, color);
-			renderer.renderSparseSphere(prev_point, radius, color);
+			prevPoint = waypoints.get(waypoints.size()-1);
+			renderer.renderWaypoint(prevPoint);
+			renderer.renderCircle(prevPoint, radius, color);
+			renderer.renderSparseSphere(prevPoint, radius, color);
 			break;
 		case CONE:
-			final double CONE_HALF_ANGLE = Math.atan(1/2);
-			player.getHeadYaw();
+			final double CONE_HALF_ANGLE = Math.atan(1.0/2);
+			double yawRadians = Math.toRadians(player.getHeadYaw());
+			double[] endpointAngles = {yawRadians - CONE_HALF_ANGLE, yawRadians + CONE_HALF_ANGLE};
+			// 0: +z
+			// 90: -x
+			for (double angle : endpointAngles) {
+				double[] target = {radius * -Math.sin(angle), 0, radius * Math.cos(angle)};
+				for (int i = 0; i < 3; ++i) {
+					target[i] += playerPos[i];
+				}
+				renderer.renderLine(playerPos, target, color);
+			}
+			renderer.renderArc(playerPos, radius, endpointAngles[0], endpointAngles[1], color);
 			break;
 		}
 	}

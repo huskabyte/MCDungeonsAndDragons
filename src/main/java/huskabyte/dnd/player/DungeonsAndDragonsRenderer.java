@@ -88,8 +88,21 @@ public class DungeonsAndDragonsRenderer {
 	 * @param color
 	 */
 	public void renderCircle(double[] center, double radius, int[] color) {
+		renderArc(center, radius, 0, 2*Math.PI, color);
+	}
+
+	/**
+	 * Render an arc from a center and radius between two angles.
+	 * @param center
+	 * @param radius
+	 * @param angle1 Start angle, in radians. Must be less than angle2.
+	 * @param angle2 End angle, in radians. Must be greater than angle1.
+	 * @param color
+	 */
+	public void renderArc(double[] center, double radius,
+						  double angle1, double angle2, int[] color) {
 		DustParticleEffect particle = new DustParticleEffect(new Vector3f(color[0]/255F, color[1]/255F, color[2]/255F), 1.0f);
-		for (double angle = 0; angle < 2*Math.PI; angle += LINE_SPACING / radius) {
+		for (double angle = angle1; angle < angle2; angle += LINE_SPACING / radius) {
 			for(ServerPlayerEntity viewer : viewers) {
 				world.spawnParticles(viewer,
 						particle, true,
