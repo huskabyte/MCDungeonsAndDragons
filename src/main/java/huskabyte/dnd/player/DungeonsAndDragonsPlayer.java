@@ -95,9 +95,11 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 
 	/**
 	 * Remove last measure point and measure from the previous one instead
+	 * 
+	 * @return True if a waypoint was removed; false otherwise
 	 */
-	public void popMeasurePoint() {
-		if(waypoints.size() <= 1) return;
+	public boolean popMeasurePoint() {
+		if(waypoints.size() <= 1) return false;
 		waypoints.remove(waypoints.size() - 1);
 		motionDistance = 0D;
 		for(int i = 1; i < waypoints.size(); i++) {
@@ -105,6 +107,7 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 					+ Math.pow((waypoints.get(i)[1] - waypoints.get(i-1)[1]), 2)
 					+ Math.pow((waypoints.get(i)[2] - waypoints.get(i-1)[2]), 2)));
 		}
+		return true;
 	}
 
 	/**
@@ -144,10 +147,25 @@ public class DungeonsAndDragonsPlayer implements InitiativeMember {
 	 * TODO test Update player action bar with distance
 	 */
 	public void updateActionBar() {
-		String messageFormat = "Movement: %.1f ft (%.1f to previous waypoint)";
-		double totalDistance = measure() * DungeonsAndDragons.DISTANCE_SCALE;
-		double singleDistance = distanceToLastWaypoint() * DungeonsAndDragons.DISTANCE_SCALE;
-		String message = String.format(messageFormat, totalDistance, singleDistance);
+		String messageFormat, message;
+		switch (drawMode) {
+		case MEASURE:
+			messageFormat = "Movement: %.1f ft (%.1f to previous waypoint)";
+			double totalDistance = measure() * DungeonsAndDragons.DISTANCE_SCALE;
+			double singleDistance = distanceToLastWaypoint() * DungeonsAndDragons.DISTANCE_SCALE;
+			message = String.format(messageFormat, totalDistance, singleDistance);
+			break;
+		case SPHERE:
+			messageFormat = "Showing sphere with radius %.1f ft";
+			message = String.format(messageFormat, radius * DungeonsAndDragons.DISTANCE_SCALE);
+			break;
+		case CONE:
+			messageFormat = "Showing cone with length %.1f ft";
+			message = String.format(messageFormat, radius * DungeonsAndDragons.DISTANCE_SCALE);
+			break;
+		default:
+			return;
+		}
 		this.player.sendMessage(MutableText.of(new LiteralTextContent(message)), true);
 	}
 

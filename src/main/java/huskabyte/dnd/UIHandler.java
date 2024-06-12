@@ -40,24 +40,34 @@ public class UIHandler {
 		UseItemCallback.EVENT.register((player, world, hand) -> {
 			DungeonsAndDragonsPlayer dnd = DungeonsAndDragonsPlayer
 					.getDndPlayerFromServerPlayer((ServerPlayerEntity) player);
+			ServerPlayerEntity serverPlayer = (ServerPlayerEntity) player;
 			if (player.getStackInHand(hand).getItem() == Items.WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE) {
 				dnd.updateMeasurePoint(true);
+				serverPlayer.sendMessage(Text.literal("Added waypoint"));
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			if (player.getStackInHand(hand).getItem() == Items.RAISER_ARMOR_TRIM_SMITHING_TEMPLATE) {
 				dnd.setRenderMode(dnd.getRenderMode().next());
+				serverPlayer.sendMessage(Text.literal("Changed measure mode to " + dnd.getRenderMode().name()));
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			if (player.getStackInHand(hand).getItem() == Items.SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE) {
 				dnd.updatePosition();
+				serverPlayer.sendMessage(Text.literal("Finalized move"));
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			if (player.getStackInHand(hand).getItem() == Items.SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE) {
 				dnd.home();
+				serverPlayer.sendMessage(Text.literal("Reset move"));
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			if (player.getStackInHand(hand).getItem() == Items.HOST_ARMOR_TRIM_SMITHING_TEMPLATE) {
-				dnd.popMeasurePoint();
+				if (dnd.popMeasurePoint()) {
+					serverPlayer.sendMessage(Text.literal("Removed last waypoint"));
+				}
+				else {
+					serverPlayer.sendMessage(Text.literal("No waypoints to remove"));
+				}
 				return TypedActionResult.success(player.getStackInHand(hand));
 			}
 			return TypedActionResult.pass(player.getStackInHand(hand));
